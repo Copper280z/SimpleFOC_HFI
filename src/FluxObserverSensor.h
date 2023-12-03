@@ -17,7 +17,7 @@ class FluxObserverSensor : public Sensor
     FluxObserverSensor class constructor
     @param m  Motor that the FluxObserverSensor will be linked to
     */
-    FluxObserverSensor(const BLDCMotor& m);
+    FluxObserverSensor( BLDCMotor *m);
     void update() override;
  
     void init() override;
@@ -25,12 +25,12 @@ class FluxObserverSensor : public Sensor
     // Abstract functions of the Sensor class implementation
     /** get current angle (rad) */
     float getSensorAngle() override;
-
+    int needsSearch() override;
     
     // For sensors with slow communication, use these to poll less often
     PhaseCurrent_s current;
     DQCurrent_s estimated_dq;
-    DQCurrent_s estimated_dq_prev;
+    DQCurrent_s estimated_dq_prev = {0,0};
     DQCurrent_s delta_dq;
 
     unsigned int sensor_downsample = 0; // parameter defining the ratio of downsampling for sensor update
@@ -50,14 +50,22 @@ class FluxObserverSensor : public Sensor
     float i_beta_prev = 0; // Previous Beta current
     float electrical_angle_prev = 0; // Previous electrical angle
     float angle_track = 0; // Total Electrical angle
-    float bemf_threshold = 30.; // Bemf voltage amplitude when the flux observer should start tracking
+    float bemf_threshold = 300.; // Bemf voltage amplitude when the flux observer should start tracking
     int8_t first = 1; // To skip angle difference calculation the first time
     float i_ah, i_bh, i_ah_prev, i_bh_prev; //Stores the band passed currents and previous difference values
-    float Ts, e, e_in_prev, theta_rcal, theta_hat, theta_out_prev, wrotor, wrotor_prev, kp, ki; //PLL values
-    MultiFilter filter_lpf, filter_calc_b, a_lpf, b_lpf; //Filters for HFI
+    float Ts, e, e_in_prev, theta_rcal, theta_hat, theta_rcal_prev, wrotor, wrotor_prev, kp, ki; //PLL values
+    float theta_int;
+    MultiFilter filter_lpf_1, filter_lpf_2, a_lpf, b_lpf; //Filters for HFI
 
+    float k1 = 2e-8;
+    float k2 = 5e-6;
+    float k3 = 0.01;
+    // float k1 = 5;
+    // float k2 = 100;
+    // float k3 = 0.1;
+    PIDController2 pid=PIDController2(k1, k2, k3,999999.0f,999999.0f);;
   protected:    
-    const BLDCMotor& _motor;
+    BLDCMotor *_motor;
 
 };
 

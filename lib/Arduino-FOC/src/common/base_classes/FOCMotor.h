@@ -177,6 +177,16 @@ class FOCMotor
     float current_limit; //!< Current limiting variable - global limit
     float velocity_limit; //!< Velocity limiting variable - global limit
 
+    float Ua, Ub, Uc;//!< Current phase voltages Ua,Ub and Uc set to motor
+    float	Ualpha, Ubeta; //!< Phase voltages U alpha and U beta used for inverse Park and Clarke transform
+    bool hfi_enabled;
+    float hfi_voltage;
+    float hfi_frequency;
+    float hfi_dt;
+    int hfi_state;
+    long prev_hfi_time;
+    bool hfi_injection_started;
+
     // motor status vairables
     int8_t enabled = 0;//!< enabled or disabled motor flag
     FOCMotorStatus motor_status = FOCMotorStatus::motor_uninitialized; //!< motor status

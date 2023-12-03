@@ -3,30 +3,36 @@
 #include "common/time_utils.h"
 #include "common/multi_filter.h"
 
-FluxObserverSensor::FluxObserverSensor(const BLDCMotor& m) : _motor(m)
+FluxObserverSensor::FluxObserverSensor( BLDCMotor *m) : _motor(m)
 {
   // Derive Flux linkage from KV_rating and pole_pairs
-  if (_isset(_motor.pole_pairs) && _isset(_motor.KV_rating)){
-    flux_linkage = 60 / ( _sqrt(3) * _PI * (_motor.KV_rating) * (_motor.pole_pairs * 2));
+  if (_isset(_motor->pole_pairs) && _isset(_motor->KV_rating)){
+    flux_linkage = 60 / ( _sqrt(3) * _PI * (_motor->KV_rating) * (_motor->pole_pairs * 2));
   }
-  filter_lpf = MultiFilter(1.0f/3800.0f, 0.7f);
-  // filter_calc_b = MultiFilter(1.0f/3800.0f, 0.7f);
-  // a_lpf=MultiFilter(1.0f/(200.0f), 0.7f);
-  // b_lpf=MultiFilter(1.0f/(200.0f), 0.7f);
+  filter_lpf_1 = MultiFilter(1.0f/500.0f, 0.7f);
+  filter_lpf_2= MultiFilter(1.0f/500.0f, 0.7f);
+  a_lpf=MultiFilter(1.0f/(200.0f), 0.7f);
+  b_lpf=MultiFilter(1.0f/(200.0f), 0.7f);
   theta_hat=0;
 
   
 }
 
+
 float I_e=0;
 
 void FluxObserverSensor::update() {
+
+  // pid.P=k1;
+  // pid.I=k2;
+  // pid.D=k3;
+  
   // Current sense is required for the observer
-  if (!_motor.current_sense) return;
+  if (!_motor->current_sense) return;
   
   // Exit if one of the parameter needed for the flux observer is 0
-  if ((_motor.phase_inductance == 0) ||
-      (_motor.phase_resistance == 0) ||
+  if ((_motor->phase_inductance == 0) ||
+      (_motor->phase_resistance == 0) ||
       (flux_linkage == 0)) return;
 
   // Update sensor, with optional downsampling of update rate
@@ -35,12 +41,12 @@ void FluxObserverSensor::update() {
   // Close to zero speed the flux observer can resonate
   // Estimate the BEMF and use HFI if it's below the threshold and HFI is enabled
   bool hfi_calculated=false;
-  float bemf = _motor.voltage.q - _motor.phase_resistance * _motor.current.q; 
+  float bemf = _motor->voltage.q - _motor->phase_resistance * _motor->current.q; 
   if (abs(bemf < bemf_threshold)){
-    if(_motor.hfi_enabled){
+    if(_motor->hfi_enabled){
         sensor_cnt = 0;
         // read current phase currents
-        current = _motor.current_sense->getPhaseCurrents();
+        current = _motor->current_sense->getPhaseCurrents();
 
         float mid = (1.f/3) * (current.a + current.b + current.c);
         float a = current.a - mid;
@@ -52,25 +58,36 @@ void FluxObserverSensor::update() {
         float st;
         _sincos(theta_hat, &st, &ct);
 
-        estimated_dq.d = (i_alpha * ct + i_beta * st);
-        estimated_dq.q = (i_beta * ct - i_alpha * st);
+        estimated_dq.d = filter_lpf_1.getBp(i_alpha * ct + i_beta * st);
+        estimated_dq.q = filter_lpf_2.getBp(i_beta * ct - i_alpha * st);
 
-        delta_dq.d = _motor.hfi_state*(estimated_dq.d - estimated_dq_prev.d);
-        delta_dq.q = _motor.hfi_state*(estimated_dq.q - estimated_dq_prev.q);
+        delta_dq.d = _motor->hfi_state*(estimated_dq.d - estimated_dq_prev.d);
+        delta_dq.q = _motor->hfi_state*(estimated_dq.q - estimated_dq_prev.q);
 
-        theta_rcal = _normalizeAngle(_atan2(delta_dq.q, delta_dq.d));
-        
-        const float k1 = 2e-5;
-        const float k2 = 5e-3;
-        const float k3 = 0.1;
+        estimated_dq_prev.d = estimated_dq.d;
+        estimated_dq_prev.q = estimated_dq.q;
 
-        theta_err = theta_rcal - theta_hat;
+        theta_rcal = a_lpf.getLp((delta_dq.q, delta_dq.d));
 
+        // theta_int += (theta_rcal-theta_rcal_prev);
+        // theta_int = _normalizeAngle(theta_int);
+        // theta_rcal_prev = theta_rcal;
+
+        theta_err = (theta_rcal - theta_hat);
+
+        // theta_err = b_lpf.getLp(delta_dq.q);
+
+        // float theta_c = pid(theta_err);
+        // _motor->zero_electric_angle = -theta_c;
         int1 += k1*theta_err;
+        // int1 = _normalizeAngle(int1);
         int2 += k2*theta_err + int1;
+        // int2 = _normalizeAngle(int2);
         int3 += k3*theta_err + int2;
+        // int3 = _normalizeAngle(int3);
 
-        theta_hat = _normalizeAngle(int3);
+        // theta_hat = (theta_rcal+theta_c);//int3;
+        theta_hat = int3;
 
         //Shift values over
 
@@ -86,7 +103,7 @@ void FluxObserverSensor::update() {
     sensor_cnt = 0;
 
   // read current phase currents
-    PhaseCurrent_s current = _motor.current_sense->getPhaseCurrents();
+    PhaseCurrent_s current = _motor->current_sense->getPhaseCurrents();
 
     // calculate clarke transform
     float i_alpha, i_beta;
@@ -125,10 +142,10 @@ void FluxObserverSensor::update() {
       // Flux linkage observer    
       float now = _micros();
       float Ts = ( now - angle_prev_ts) * 1e-6f; 
-      flux_alpha = _constrain( flux_alpha + (_motor.Ualpha - _motor.phase_resistance * i_alpha) * Ts -
-            _motor.phase_inductance * (i_alpha - i_alpha_prev),-flux_linkage, flux_linkage);
-      flux_beta  = _constrain( flux_beta  + (_motor.Ubeta  - _motor.phase_resistance * i_beta)  * Ts -
-            _motor.phase_inductance * (i_beta  - i_beta_prev) ,-flux_linkage, flux_linkage);
+      flux_alpha = _constrain( flux_alpha + (_motor->Ualpha - _motor->phase_resistance * i_alpha) * Ts -
+            _motor->phase_inductance * (i_alpha - i_alpha_prev),-flux_linkage, flux_linkage);
+      flux_beta  = _constrain( flux_beta  + (_motor->Ubeta  - _motor->phase_resistance * i_beta)  * Ts -
+            _motor->phase_inductance * (i_beta  - i_beta_prev) ,-flux_linkage, flux_linkage);
       
       // Calculate angle
         electrical_angle = _normalizeAngle(_atan2(flux_beta,flux_alpha));
@@ -153,16 +170,16 @@ void FluxObserverSensor::update() {
   angle_track += d_electrical_angle;
 
   // Mechanical angle and full_rotations
-  if(abs(angle_track) > _2PI * _motor.pole_pairs){
+  if(abs(angle_track) > _2PI * _motor->pole_pairs){
     if (angle_track>0){
       full_rotations += 1;
-      angle_track -= _2PI * _motor.pole_pairs;
+      angle_track -= _2PI * _motor->pole_pairs;
     }else{
       full_rotations -= 1;
-      angle_track += _2PI * _motor.pole_pairs;
+      angle_track += _2PI * _motor->pole_pairs;
     }
   }
-  angle_prev = angle_track /_motor.pole_pairs;
+  angle_prev = angle_track /_motor->pole_pairs;
   
   // Store Previous values
   i_alpha_prev = i_alpha;
@@ -180,5 +197,9 @@ void FluxObserverSensor::init(){
 	Shaft angle calculation
 */
 float FluxObserverSensor::getSensorAngle(){
-  return 0;
+  return angle_prev;
+}
+
+int FluxObserverSensor::needsSearch() {
+    return 0; // default false
 }

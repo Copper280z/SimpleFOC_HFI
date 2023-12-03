@@ -20,7 +20,7 @@ BLDCDriver6PWM driver = BLDCDriver6PWM(A_PHASE_UH, A_PHASE_UL, A_PHASE_VH, A_PHA
 // encoder instance
 STM32HWEncoder encoder = STM32HWEncoder(2048, A_ENCODER_A, A_ENCODER_B);
 // STM32HWEncoder encoder = STM32HWEncoder(2048, PB6_ALT2, PB7_ALT2);
-FluxObserverSensor hfi = FluxObserverSensor(motor); 
+FluxObserverSensor hfi = FluxObserverSensor(&motor); 
 
 //Current sensing 
 LowsideCurrentSense currentSense = LowsideCurrentSense(0.003f, -64.0f/7.0f, A_OP1_OUT, A_OP2_OUT, A_OP3_OUT);
@@ -30,6 +30,10 @@ Commander command = Commander(Serial, '\n', true);
 void onMotor(char* cmd){ command.motor(&motor, cmd); }
 void doTarget(char* cmd) { command.scalar(&motor.target, cmd); }
 void doLimitCurrent(char* cmd) { command.scalar(&motor.voltage_limit, cmd); }
+
+void dok1(char* cmd) {command.scalar(&hfi.k1, cmd);}
+void dok2(char* cmd) {command.scalar(&hfi.k2, cmd);}
+void dok3(char* cmd) {command.scalar(&hfi.k3, cmd);}
 
 int t0=0;
 long i=0;
@@ -50,8 +54,8 @@ void setup() {
     motor.linkSensor(&hfi);
     // motor.linkSensor(&encoder);
     motor.hfi_enabled=true;
-    motor.hfi_voltage = .5;
-    motor.hfi_frequency=4000;
+    motor.hfi_voltage = 1;
+    motor.hfi_frequency=500;
 
     // choose FOC modulation
     motor.foc_modulation = FOCModulationType::SpaceVectorPWM;
@@ -109,10 +113,12 @@ void setup() {
     // initialise motor
     motor.init();
     // align encoder and start FOC
-    motor.setPhaseVoltage(3,0,0);
+    // motor.setPhaseVoltage(3,0,0);
+    motor.setPhaseVoltage(3, 0,  _3PI_2);
     _delay(500);
-    motor.sensor_offset = 1.57;
-    motor.sensor_direction = Direction::CW;
+    motor.zero_electric_angle = 0;
+    motor.sensor_offset = 0;
+    motor.sensor_direction = Direction::CCW;
     motor.initFOC();
 
     motor.setPhaseVoltage(0,0,0);
@@ -124,7 +130,9 @@ void setup() {
     // define the motor id
     char motor_id = 'M';
     command.add(motor_id, onMotor, (char*) "motor");
-
+    command.add((char)'a',&dok1,(char*)"k1");
+    command.add((char)'b',&dok2,(char*)"k2");
+    command.add((char)'c',&dok3,(char*)"k3");
     //For the web interface
     motor.monitor_downsample = 500;
     // motor.monitor_start_char = motor_id; // the same latter as the motor id in the commander 
@@ -134,7 +142,7 @@ void setup() {
     // Run user commands to configure and the motor (find the full command list in docs.simplefoc.com)
     Serial.println(F("Motor commands sketch | Initial motion control > torque/voltage : target 2V."));
 
-    _delay(2000);
+    // _delay(2000);
 }
 
 void loop() {
@@ -144,7 +152,7 @@ void loop() {
   motor.move();
 
   encoder.update();
-  hfi.update();
+  // hfi.update();
 
   // if ((micros()-t0) > 1e4) {
   //     Serial.printf("%d loops per sec\n", i*100);
