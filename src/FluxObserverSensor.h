@@ -65,9 +65,9 @@ class FluxObserverSensor : public Sensor
     // float k1 = 2e-8;
     // float k2 = 5e-6;
     // float k3 = 0.01;
-    float k1 = 1;
-    float k2 = 1;
-    float k3 = 0.01;
+    float k1 = 0.015;
+    float k2 = 2.0;
+    float k3 = 0.0;
     PIDController2 pid=PIDController2(k1, k2, k3,999999.0f,999999.0f);;
   protected:    
     BLDCMotor *_motor;
