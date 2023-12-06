@@ -69,7 +69,7 @@ void setup() {
     motor.linkSensor(&hfi);
     // motor.linkSensor(&encoder);
     motor.hfi_enabled=true;
-    motor.hfi_voltage = 0.7;
+    motor.hfi_voltage = 1.0;
     motor.hfi_frequency=500;
 
     // choose FOC modulation
@@ -93,8 +93,8 @@ void setup() {
     motor.controller = MotionControlType::torque;
 
     // controller configuration based on the control type 
-    motor.PID_velocity.P = 0.02;
-    motor.PID_velocity.I = 3.0;
+    motor.PID_velocity.P = 0.01;
+    motor.PID_velocity.I = 1.0;
     motor.PID_velocity.D = 0.000;
     // motor.PID_velocity.P = 0.11;
     // motor.PID_velocity.I = 0.0;
@@ -110,9 +110,9 @@ void setup() {
     // motor.KV_rating = 40;
 
     // angle loop controller
-    motor.P_angle.P = 1;
-    motor.P_angle.I = 0;
-    motor.P_angle.D = 0.0;
+    motor.P_angle.P = 0.3;
+    motor.P_angle.I = 01;
+    motor.P_angle.D = 0.001;
     // motor.P_angle.P = 8;
     // motor.P_angle.I = 0;
     // motor.P_angle.D = 0.0;

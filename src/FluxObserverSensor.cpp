@@ -11,12 +11,12 @@ FluxObserverSensor::FluxObserverSensor( BLDCMotor *m) : _motor(m)
   if (_isset(_motor->pole_pairs) && _isset(_motor->KV_rating)){
     flux_linkage = 60 / ( _sqrt(3) * _PI * (_motor->KV_rating) * (_motor->pole_pairs * 2));
   }
-  filter_lpf_1 = MultiFilter(1.0f/500.0f, 0.7f);
-  filter_lpf_2= MultiFilter(1.0f/500.0f, 0.7f);
+  filter_lpf_1 = MultiFilter(1.0f/400.0f, 0.7f);
+  filter_lpf_2= MultiFilter(1.0f/400.0f, 0.7f);
   filter_lpf_3 = MultiFilter(1.0f/500.0f, 0.7f);
   filter_lpf_4= MultiFilter(1.0f/500.0f, 0.7f);
-  a_lpf=MultiFilter(1.0f/(200.0f), 0.7f);
-  b_lpf=MultiFilter(1.0f/(200.0f), 0.7f);
+  a_lpf=MultiFilter(1.0f/(500.0f), 0.7f);
+  b_lpf=MultiFilter(1.0f/(500.0f), 0.7f);
   theta_hat=0;
 
   
@@ -70,8 +70,8 @@ void FluxObserverSensor::update() {
         float st;
         _sincos(_motor->electrical_angle, &st, &ct);
 
-        estimated_dq.d = i_alpha * ct + i_beta * st;
-        estimated_dq.q = i_beta * ct - i_alpha * st;
+        estimated_dq.d = a_lpf.getBp(i_alpha * ct + i_beta * st);
+        estimated_dq.q = b_lpf.getBp(i_beta * ct - i_alpha * st);
 
         delta_dq.d = filter_lpf_1.getLp(motor.hfi_state_meas*((estimated_dq.d - estimated_dq_prev.d)/Ts));
         delta_dq.q = filter_lpf_2.getLp(motor.hfi_state_meas*((estimated_dq.q - estimated_dq_prev.q)/Ts));
