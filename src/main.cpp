@@ -93,13 +93,13 @@ void setup() {
     motor.controller = MotionControlType::torque;
 
     // controller configuration based on the control type 
-    motor.PID_velocity.P = 0.11;
-    motor.PID_velocity.I = 1.5;
+    motor.PID_velocity.P = 0.02;
+    motor.PID_velocity.I = 3.0;
     motor.PID_velocity.D = 0.000;
     // motor.PID_velocity.P = 0.11;
     // motor.PID_velocity.I = 0.0;
     // motor.PID_velocity.D = 0.000;
-    motor.LPF_velocity.Tf = 0.015;
+    motor.LPF_velocity.Tf = 0.02;
     motor.PID_velocity.output_ramp = 0;
     // default voltage_power_supply
     motor.voltage_limit = 6;
@@ -110,15 +110,15 @@ void setup() {
     // motor.KV_rating = 40;
 
     // angle loop controller
-    motor.P_angle.P = 175;
-    motor.P_angle.I = 1;
-    motor.P_angle.D = 0.1;
+    motor.P_angle.P = 1;
+    motor.P_angle.I = 0;
+    motor.P_angle.D = 0.0;
     // motor.P_angle.P = 8;
     // motor.P_angle.I = 0;
     // motor.P_angle.D = 0.0;
     motor.LPF_angle = 0.00;
     // angle loop velocity limit
-    motor.velocity_limit = 10000;
+    motor.velocity_limit = 10;
 
     // use monitoring with serial for motor init
     // monitoring port
