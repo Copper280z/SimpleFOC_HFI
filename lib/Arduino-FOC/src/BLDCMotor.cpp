@@ -363,7 +363,16 @@ void BLDCMotor::loopFOC() {
       current.d = LPF_current_d(current.d);
       // calculate the phase voltages
       voltage.q = PID_current_q(current_sp - current.q);
-      voltage.d = PID_current_d(-current.d);
+      voltage.d = PID_current_d(1-current.d);
+      if(hfi_enabled){
+        long hfi_time = micros();
+        if((hfi_time-hfi_time_prev)>=((1000000.0/hfi_frequency)/2.0)){
+          hfi_state*=-1;
+          hfi_dt = (float) (hfi_time -hfi_time_prev);
+          hfi_time_prev = hfi_time;
+        }
+        voltage.d +=hfi_state*hfi_voltage;
+      }
       // d voltage - lag compensation - TODO verify
       // if(_isset(phase_inductance)) voltage.d = _constrain( voltage.d - current_sp*shaft_velocity*pole_pairs*phase_inductance, -voltage_limit, voltage_limit);
       break;
@@ -372,15 +381,7 @@ void BLDCMotor::loopFOC() {
       SIMPLEFOC_DEBUG("MOT: no torque control selected!");
       break;
   }
-  if(hfi_enabled){
-    long hfi_time = micros();
-    if((hfi_time-hfi_time_prev)>=((1000000.0/hfi_frequency)/2.0)){
-      hfi_state*=-1;
-      hfi_dt = (float) (hfi_time -hfi_time_prev);
-      hfi_time_prev = hfi_time;
-    }
-    voltage.d+=hfi_state*hfi_voltage;
-  }
+
   // set the phase voltage - FOC heart function :)
   setPhaseVoltage(voltage.q, voltage.d, electrical_angle);
 }

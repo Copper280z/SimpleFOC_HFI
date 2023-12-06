@@ -184,6 +184,7 @@ class FOCMotor
     float hfi_frequency;
     float hfi_dt;
     int hfi_state;
+    int hfi_state_meas;
     long prev_hfi_time;
     bool hfi_injection_started;
 

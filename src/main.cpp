@@ -13,6 +13,11 @@
 #define PP 4
 #define KV 333
 
+// #define RPHASE 0.1
+// #define L_PHASE 0.62
+// #define PP 1
+// #define KV 2200
+
 // Stepper motor instance
 BLDCMotor motor = BLDCMotor(PP, RPHASE, KV, L_PHASE);
 BLDCDriver6PWM driver = BLDCDriver6PWM(A_PHASE_UH, A_PHASE_UL, A_PHASE_VH, A_PHASE_VL, A_PHASE_WH, A_PHASE_WL);
@@ -35,10 +40,20 @@ void dok1(char* cmd) {command.scalar(&hfi.k1, cmd);}
 void dok2(char* cmd) {command.scalar(&hfi.k2, cmd);}
 void dok3(char* cmd) {command.scalar(&hfi.k3, cmd);}
 
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+    // Read & Update The ADC Result
+    motor.hfi_state_meas = motor.hfi_state;
+}
+
+
+
 int t0=0;
 long i=0;
 
 void setup() {
+    HAL_NVIC_SetPriority(ADC1_2_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
     Serial.begin(115200);
     // init step and dir pins
     Serial.println("Starting HW Encoder");
@@ -54,7 +69,7 @@ void setup() {
     motor.linkSensor(&hfi);
     // motor.linkSensor(&encoder);
     motor.hfi_enabled=true;
-    motor.hfi_voltage = 1;
+    motor.hfi_voltage = 0.7;
     motor.hfi_frequency=500;
 
     // choose FOC modulation
@@ -87,7 +102,7 @@ void setup() {
     motor.LPF_velocity.Tf = 0.015;
     motor.PID_velocity.output_ramp = 0;
     // default voltage_power_supply
-    motor.voltage_limit = 2;
+    motor.voltage_limit = 6;
     motor.current_limit = 1.0;
     // motor.phase_resistance = 9.9;
     // motor.phase_inductance = 0.01252;
