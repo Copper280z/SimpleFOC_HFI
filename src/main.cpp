@@ -20,9 +20,10 @@ void setup() {
   pinMode(PC10,OUTPUT);
   Serial.begin(2000000);
 	SimpleFOCDebug::enable(&Serial);
-  delay(1000);
 
-  driver.voltage_power_supply = 30;
+  while (!Serial.available()) {}
+
+  driver.voltage_power_supply = 35;
   driver.pwm_frequency = 30000;
   // driver.voltage_limit = driver.voltage_power_supply/2;
   driver.voltage_limit = driver.voltage_power_supply/2;
@@ -36,19 +37,19 @@ void setup() {
   currentsense.linkDriver(&driver);
   currentsense.init();
 
-  motor.LPF_current_d.Tf = 1/(1000*_2PI);
-  motor.LPF_current_q.Tf = 1/(1000*_2PI);
+  motor.LPF_current_d.Tf = 1/(300*_2PI);
+  motor.LPF_current_q.Tf = 1/(300*_2PI);
   motor.torque_controller = TorqueControlType::foc_current;
   // motor.controller = MotionControlType::velocity_openloop;
   motor.controller = MotionControlType::torque;
 
-  motor.hfi_v = 8;
+  motor.hfi_v = 15;
 
   motor.init();
   motor.initFOC();
   motor.hfi_on = true;
   delay(500);
-
+  motor.current_setpoint.d = 0.1;
 }
 
 void loop() {
@@ -58,6 +59,6 @@ void loop() {
   // Serial.println(motor.electrical_angle);
   // Serial.print(motor.current_meas.d);
   // Serial.print(", ");
-  // Serial.println(motor.current_meas.q);
+  // Serial.println(motor.delta_current.q);
 
 }
