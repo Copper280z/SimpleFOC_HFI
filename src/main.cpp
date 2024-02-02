@@ -37,24 +37,24 @@ void setup() {
   currentsense.linkDriver(&driver);
   currentsense.init();
 
-  motor.LPF_current_d.Tf = 1/(300*_2PI);
-  motor.LPF_current_q.Tf = 1/(300*_2PI);
+  motor.LPF_current_d.Tf = 1/(2000*_2PI);
+  motor.LPF_current_q.Tf = 1/(2000*_2PI);
   motor.torque_controller = TorqueControlType::foc_current;
   // motor.controller = MotionControlType::velocity_openloop;
   motor.controller = MotionControlType::torque;
 
-  motor.hfi_v = 15;
+  motor.hfi_v = 12;
 
   motor.init();
   motor.initFOC();
   motor.hfi_on = true;
   delay(500);
-  motor.current_setpoint.d = 0.1;
+  motor.current_setpoint.d = 0.0f;
 }
 
 void loop() {
   motor.move();
-  motor.loopFOC();
+  // motor.loopFOC();
   command.run();
   // Serial.println(motor.electrical_angle);
   // Serial.print(motor.current_meas.d);
