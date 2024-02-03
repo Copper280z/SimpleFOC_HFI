@@ -43,7 +43,7 @@ void setup() {
   // motor.controller = MotionControlType::velocity_openloop;
   motor.controller = MotionControlType::torque;
 
-  motor.hfi_v = 12;
+  motor.hfi_v = 6;
 
   motor.init();
   motor.initFOC();
@@ -54,7 +54,7 @@ void setup() {
 
 void loop() {
   motor.move();
-  // motor.loopFOC();
+  motor.loopFOC();
   command.run();
   // Serial.println(motor.electrical_angle);
   // Serial.print(motor.current_meas.d);
