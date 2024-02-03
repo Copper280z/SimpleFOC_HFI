@@ -23,7 +23,7 @@ void setup() {
 
   while (!Serial.available()) {}
 
-  driver.voltage_power_supply = 35;
+  driver.voltage_power_supply = 24;
   driver.pwm_frequency = 30000;
   // driver.voltage_limit = driver.voltage_power_supply/2;
   driver.voltage_limit = driver.voltage_power_supply/2;
@@ -37,13 +37,14 @@ void setup() {
   currentsense.linkDriver(&driver);
   currentsense.init();
 
+  motor.current_limit = 0.3;
   motor.LPF_current_d.Tf = 1/(2000*_2PI);
   motor.LPF_current_q.Tf = 1/(2000*_2PI);
   motor.torque_controller = TorqueControlType::foc_current;
   // motor.controller = MotionControlType::velocity_openloop;
   motor.controller = MotionControlType::torque;
 
-  motor.hfi_v = 6;
+  motor.hfi_v = 10;
 
   motor.init();
   motor.initFOC();
