@@ -21,10 +21,9 @@ void setup() {
 
   while (!Serial.available()) {}
 
-  driver.voltage_power_supply = 24;
-  driver.pwm_frequency = 30000;
-  // driver.voltage_limit = driver.voltage_power_supply/2;
-  driver.voltage_limit = driver.voltage_power_supply/2;
+  driver.voltage_power_supply = 33;
+  driver.pwm_frequency = 20000;
+  driver.voltage_limit = driver.voltage_power_supply*0.9;
   driver.init();
 
   command.add('M',&onMotor,"motor");
@@ -35,10 +34,10 @@ void setup() {
   currentsense.linkDriver(&driver);
   currentsense.init();
 
-  motor.current_limit = 0.3;
-  motor.P_angle.P = 0.3;
-  motor.P_angle.I = 0.2;
-  motor.P_angle.D = 100;
+  motor.current_limit = 0.3f;
+  motor.P_angle.P = 0.3f;
+  motor.P_angle.I = 0.01f;
+  motor.P_angle.D = 0.003f;
   motor.P_angle.output_ramp = 0;
   motor.LPF_angle.Tf = 0;
   motor.LPF_current_d.Tf = 1/(2000*_2PI);
@@ -47,7 +46,7 @@ void setup() {
   // motor.controller = MotionControlType::velocity_openloop;
   motor.controller = MotionControlType::torque;
 
-  motor.hfi_v = 10;
+  motor.hfi_v = 13;
 
   motor.init();
   motor.initFOC();
