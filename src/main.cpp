@@ -5,9 +5,7 @@
 
 HFIBLDCMotor motor = HFIBLDCMotor(7,20);
 BLDCDriver3PWM driver = BLDCDriver3PWM(MOT1_A, MOT1_B, MOT1_C, MOT1_EN);
-// BLDCDriver3PWM* pdriver = &driver;
 LowsideCurrentSense currentsense = LowsideCurrentSense(0.01f, 50.0f, CS_A, CS_B);
-// LowsideCurrentSense* pcurrentsense = &currentsense;
 
 Commander command = Commander(Serial);
 void onMotor(char* cmd){command.motor(&motor,cmd);}
@@ -38,6 +36,11 @@ void setup() {
   currentsense.init();
 
   motor.current_limit = 0.3;
+  motor.P_angle.P = 0.3;
+  motor.P_angle.I = 0.2;
+  motor.P_angle.D = 100;
+  motor.P_angle.output_ramp = 0;
+  motor.LPF_angle.Tf = 0;
   motor.LPF_current_d.Tf = 1/(2000*_2PI);
   motor.LPF_current_q.Tf = 1/(2000*_2PI);
   motor.torque_controller = TorqueControlType::foc_current;
@@ -53,8 +56,14 @@ void setup() {
   motor.current_setpoint.d = 0.0f;
 }
 
+uint32_t time_prev=0;
 void loop() {
-  motor.move();
+  uint32_t time_now = micros();
+  if ((time_now-time_prev) > 1000){
+    motor.move();
+    time_prev = time_now;
+  }
+
   motor.loopFOC();
   command.run();
   // Serial.println(motor.electrical_angle);
