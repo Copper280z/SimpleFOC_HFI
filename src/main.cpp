@@ -4,8 +4,16 @@
 
 
 HFIBLDCMotor motor = HFIBLDCMotor(7,20);
+
+#ifdef STM32F4xx
 BLDCDriver3PWM driver = BLDCDriver3PWM(MOT1_A, MOT1_B, MOT1_C, MOT1_EN);
 LowsideCurrentSense currentsense = LowsideCurrentSense(0.01f, 50.0f, CS_A, CS_B);
+#endif
+
+#ifdef ARDUINO_B_G431B_ESC1
+BLDCDriver6PWM driver = BLDCDriver6PWM(A_PHASE_UH, A_PHASE_UL, A_PHASE_VH, A_PHASE_VL, A_PHASE_WH, A_PHASE_WL);
+LowsideCurrentSense currentsense = LowsideCurrentSense(0.003f, -64.0f/7.0f, A_OP1_OUT, A_OP2_OUT, A_OP3_OUT);
+#endif
 
 Commander command = Commander(Serial);
 void onMotor(char* cmd){command.motor(&motor,cmd);}
@@ -15,14 +23,14 @@ void process_hfi(){motor.process_hfi();}
 
 
 void setup() {
-  pinMode(PC10,OUTPUT);
+  // pinMode(PC10,OUTPUT);
   Serial.begin(2000000);
 	SimpleFOCDebug::enable(&Serial);
 
   while (!Serial.available()) {}
 
-  driver.voltage_power_supply = 33;
-  driver.pwm_frequency = 20000;
+  driver.voltage_power_supply = 20;
+  driver.pwm_frequency = 30000;
   driver.voltage_limit = driver.voltage_power_supply*0.9;
   driver.init();
 
@@ -32,6 +40,7 @@ void setup() {
 
   motor.linkCurrentSense(&currentsense);
   currentsense.linkDriver(&driver);
+  currentsense.skip_align = true;
   currentsense.init();
 
   motor.current_limit = 0.3f;
@@ -46,13 +55,14 @@ void setup() {
   // motor.controller = MotionControlType::velocity_openloop;
   motor.controller = MotionControlType::torque;
 
-  motor.hfi_v = 13;
+  motor.hfi_v = 9;
 
   motor.init();
   motor.initFOC();
+  
   motor.hfi_on = true;
-  delay(500);
-  motor.current_setpoint.d = 0.0f;
+  motor.sensor_direction = Direction::CCW;
+  motor.current_setpoint.d = 0.00f;
 }
 
 uint32_t time_prev=0;
