@@ -46,17 +46,17 @@ void setup() {
 
   motor.current_limit = 0.3f;
   motor.P_angle.P = 0.3f;
-  motor.P_angle.I = 0.01f;
-  motor.P_angle.D = 0.003f;
+  motor.P_angle.I = 0.1f;
+  motor.P_angle.D = 0.005f;
   motor.P_angle.output_ramp = 0;
-  motor.LPF_angle.Tf = 0;
+  motor.LPF_angle.Tf = 0.;
   motor.LPF_current_d.Tf = 1/(2000*_2PI);
   motor.LPF_current_q.Tf = 1/(2000*_2PI);
   motor.torque_controller = TorqueControlType::foc_current;
   // motor.controller = MotionControlType::velocity_openloop;
   motor.controller = MotionControlType::torque;
 
-  motor.hfi_v = 12;
+  motor.hfi_v = 9;
 
   motor.init();
   motor.initFOC();
