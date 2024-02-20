@@ -2,7 +2,6 @@
 #include "pinout.h"
 #include "SimpleFOC.h"
 
-
 HFIBLDCMotor motor = HFIBLDCMotor(7,20);
 
 #ifdef STM32F4xx
@@ -15,6 +14,11 @@ BLDCDriver6PWM driver = BLDCDriver6PWM(A_PHASE_UH, A_PHASE_UL, A_PHASE_VH, A_PHA
 LowsideCurrentSense currentsense = LowsideCurrentSense(0.003f, -64.0f/7.0f, A_OP1_OUT, A_OP2_OUT, A_OP3_OUT);
 #endif
 
+#ifdef ESP32
+BLDCDriver3PWM driver = BLDCDriver3PWM(26, 27, 33, 12); // c-> b1
+LowsideCurrentSense currentsense = LowsideCurrentSense(0.01f, 50.0f, 35, 34);
+#endif
+
 Commander command = Commander(Serial);
 void onMotor(char* cmd){command.motor(&motor,cmd);}
 
@@ -23,9 +27,15 @@ void process_hfi(){motor.process_hfi();}
 
 
 void setup() {
-  // pinMode(PC10,OUTPUT);
+  #ifdef ESP32
+  setCpuFrequencyMhz(240);
+  Serial.begin(115200);
+  pinMode(2,OUTPUT);
+  #else
+  pinMode(PC10,OUTPUT);
   Serial.begin(2000000);
-	SimpleFOCDebug::enable(&Serial);
+	#endif
+  SimpleFOCDebug::enable(&Serial);
 
   while (!Serial.available()) {}
 
