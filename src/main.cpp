@@ -15,6 +15,8 @@ LowsideCurrentSense currentsense = LowsideCurrentSense(0.003f, -64.0f/7.0f, A_OP
 #endif
 
 #ifdef ESP32
+#include <soc/adc_periph.h>
+#include <driver/adc.h>
 BLDCDriver3PWM driver = BLDCDriver3PWM(26, 27, 33, 12); // c-> b1
 LowsideCurrentSense currentsense = LowsideCurrentSense(0.01f, 50.0f, 35, 34);
 #endif
@@ -39,7 +41,7 @@ void setup() {
 
   while (!Serial.available()) {}
 
-  driver.voltage_power_supply = 30;
+  driver.voltage_power_supply = 33;
   driver.pwm_frequency = 20000;
   driver.voltage_limit = driver.voltage_power_supply*0.9;
   driver.init();
@@ -66,7 +68,15 @@ void setup() {
   // motor.controller = MotionControlType::velocity_openloop;
   motor.controller = MotionControlType::torque;
 
-  motor.hfi_v = 9;
+  // 2804 140kv
+  motor.Ld = 2200e-6f;
+  motor.Lq = 3100e-6f;
+  
+  //5208 80kv
+  // motor.Ld = 4000e-6f;
+  // motor.Lq = 6500e-6f;
+
+  motor.hfi_v = 10;
 
   motor.init();
   motor.initFOC();
@@ -86,9 +96,5 @@ void loop() {
 
   motor.loopFOC();
   command.run();
-  // Serial.println(motor.electrical_angle);
-  // Serial.print(motor.current_meas.d);
-  // Serial.print(", ");
-  // Serial.println(motor.delta_current.q);
 
 }
