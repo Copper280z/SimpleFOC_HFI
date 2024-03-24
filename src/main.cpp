@@ -2,9 +2,9 @@
 #include "pinout.h"
 #include "SimpleFOC.h"
 
-HFIBLDCMotor motor = HFIBLDCMotor(7,20);
+HFIBLDCMotor motor = HFIBLDCMotor(7);
 
-#ifdef STM32F4xx
+#if defined(STM32F4xx) || defined(STM32F7xx)
 BLDCDriver3PWM driver = BLDCDriver3PWM(MOT1_A, MOT1_B, MOT1_C, MOT1_EN);
 LowsideCurrentSense currentsense = LowsideCurrentSense(0.01f, 50.0f, CS_A, CS_B);
 #endif
@@ -34,15 +34,41 @@ void setup() {
   Serial.begin(115200);
   pinMode(2,OUTPUT);
   #else
-  pinMode(PC10,OUTPUT);
+  pinMode(LED_BUILTIN,OUTPUT);
   Serial.begin(2000000);
 	#endif
   SimpleFOCDebug::enable(&Serial);
-
+  
   while (!Serial.available()) {}
 
-  driver.voltage_power_supply = 33;
-  driver.pwm_frequency = 20000;
+  // 2804 140kv
+  // motor.phase_resistance = 10;
+  // motor.Ld = 2200e-6f;
+  // motor.Lq = 3100e-6f;
+  // motor.voltage_sensor_align = 4.0;
+  // motor.error_saturation_limit = 0.3f;
+  // motor.hfi_v = 10;
+  // driver.pwm_frequency = 20000;
+  // motor.current_limit = 0.3f;
+
+
+  // 3548 790kv
+  motor.phase_resistance = 0.07;
+  motor.Ld = 4.345e-6f;
+  motor.Lq = 5.475e-6f;
+  motor.voltage_sensor_align = 1.0;
+  motor.error_saturation_limit = 0.1f;
+  motor.hfi_v = 4;
+  motor.current_limit = 3.0f;
+  driver.pwm_frequency = 30000;
+
+  //5208 80kv
+  // motor.Ld = 4000e-6f;
+  // motor.Lq = 6500e-6f;
+
+
+
+  driver.voltage_power_supply = 16;
   driver.voltage_limit = driver.voltage_power_supply*0.9;
   driver.init();
 
@@ -56,7 +82,6 @@ void setup() {
   // currentsense.skip_align = true;
   currentsense.init();
 
-  motor.current_limit = 0.3f;
   motor.P_angle.P = 0.3f;
   motor.P_angle.I = 0.1f;
   motor.P_angle.D = 0.005f;
@@ -65,22 +90,14 @@ void setup() {
   motor.LPF_current_d.Tf = 1/(2000*_2PI);
   motor.LPF_current_q.Tf = 1/(2000*_2PI);
   motor.torque_controller = TorqueControlType::foc_current;
-  // motor.controller = MotionControlType::velocity_openloop;
   motor.controller = MotionControlType::torque;
 
-  // 2804 140kv
-  motor.Ld = 2200e-6f;
-  motor.Lq = 3100e-6f;
-  
-  //5208 80kv
-  // motor.Ld = 4000e-6f;
-  // motor.Lq = 6500e-6f;
 
-  motor.hfi_v = 10;
+
 
   motor.init();
   motor.initFOC();
-  
+
   motor.hfi_on = true;
   motor.sensor_direction = Direction::CCW;
   motor.current_setpoint.d = 0.00f;
