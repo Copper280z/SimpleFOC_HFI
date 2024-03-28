@@ -58,7 +58,7 @@ void setup() {
   motor.Lq = 5.475e-6f;
   motor.voltage_sensor_align = 1.0;
   motor.error_saturation_limit = 0.1f;
-  motor.hfi_v = 4;
+  motor.hfi_v = 1;
   motor.current_limit = 3.0f;
   driver.pwm_frequency = 30000;
 
@@ -87,6 +87,14 @@ void setup() {
   motor.P_angle.D = 0.005f;
   motor.P_angle.output_ramp = 0;
   motor.LPF_angle.Tf = 0.;
+
+  motor.PID_velocity.P = 0.01f;
+  motor.PID_velocity.I = 0.01f;
+  motor.PID_velocity.D = 0.0f;
+  motor.PID_velocity.output_ramp = 0;
+  motor.LPF_velocity.Tf = 0.; // this is not currently used because HFI doesn't use the sensor class at all, and this is implemented in FOCMotor. TBD on how to handle.
+
+
   motor.LPF_current_d.Tf = 1/(2000*_2PI);
   motor.LPF_current_q.Tf = 1/(2000*_2PI);
   motor.torque_controller = TorqueControlType::foc_current;
